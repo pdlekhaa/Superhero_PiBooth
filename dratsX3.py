@@ -40,23 +40,29 @@ def show_image(file_path):  # Added this function
     except subprocess.CalledProcessError as e:  # Adding exception handling
         print(f"Failed to open image with feh: {e}") 
         
-def add_frame(background): #takes in openCV image (of picture taken)
-    #add alpha channel to picture
-    background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA) # the flip
-    background[:, :, 3] = 255 # 255
-    foreground = cv2.imread("/home/pi1/Blue_NewFrame.png", cv2.IMREAD_UNCHANGED) #*#*# CHANGE ME *#*#*#
-    # normalize alpha channels from 0-255 to 0-1
-    alpha_background = background[:,:,3] / 255.0
-    alpha_foreground = foreground[:,:,3] / 255.0
-
-    # set adjusted colors
-    for color in range(0, 3):
-        background[:,:,color] = alpha_foreground * foreground[:,:,color] + \
-            alpha_background * background[:,:,color] * (1 - alpha_foreground)
-
-    # set adjusted alpha and denormalize back to 0-255
-    background[:,:,3] = (1 - (1 - alpha_foreground) * (1 - alpha_background)) * 255
-    return background
+def add_frame(background, choice): #takes in openCV image (of picture taken)
+	#add alpha channel to picture
+	background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA) # the flip
+	background[:, :, 3] = 255 # 255
+	#*#*# CHANGE ME *#*#*#
+	if 'Expression' in choice:
+		foreground = cv2.imread("/home/pi1/Pink_NewFrame.png", cv2.IMREAD_UNCHANGED) 
+	elif 'Scientific' in choice:
+		foreground = cv2.imread("/home/pi1/Green_NewFrame.png", cv2.IMREAD_UNCHANGED)
+	elif 'Justic' in choice:
+		foreground = cv2.imread("/home/pi1/Blue_NewFrame.png", cv2.IMREAD_UNCHANGED) 
+	
+	# normalize alpha channels from 0-255 to 0-1
+	alpha_background = background[:,:,3] / 255.0
+	alpha_foreground = foreground[:,:,3] / 255.0
+	# set adjusted colors
+	for color in range(0, 3):
+		background[:,:,color] = alpha_foreground * foreground[:,:,color] + \
+			alpha_background * background[:,:,color] * (1 - alpha_foreground)
+			
+	# set adjusted alpha and denormalize back to 0-255
+	background[:,:,3] = (1 - (1 - alpha_foreground) * (1 - alpha_background)) * 255
+	return background
             
 def smooth(image, faces):
     mask = np.zeros_like(image)
@@ -78,7 +84,7 @@ def detect_face(image):
         minSize=(30, 30))
     return faces
 
-def process_image(file_path):
+def process_image(file_path, choice):
     #cartoonize
     image = cv2.imread(file_path) 
     faces = detect_face(image)
@@ -99,30 +105,34 @@ def process_image(file_path):
                                         cv2.BORDER_CONSTANT, value=[255, 0, 0])  
 
     #add frame
-    final = add_frame(padded_cartoon)
-    final_file_path = f'/home/pi1/{datetime.now():%H-%M-%S}_cartoon.jpg'
+    final = add_frame(padded_cartoon, choice)
+    final_file_path = file_path.replace('photos', 'photos_cartoon').replace('.jpg', 'cart.jpg')
     cv2.imwrite(final_file_path, final)
     return final_file_path
     
-def capture():
-    file_path = f'/home/pi1/{datetime.now():%H-%M-%S}.jpg' # save path defined
-    camera.capture_file(file_path) # capture_file, a picamera2 function
-    return file_path
+def capture(student_info):
+	name = student_info[0]
+	r1 = 'Y' if 'Y' in student_info[1] else 'N'
+	r2 = 'Y' if 'Y' in student_info[2] else 'N'
+	uniq = student_info[3]
+	file_path = f'/home/pi1/photos/{uniq}_{name}_{r1}_{r2}_.jpg' # save path defined
+	camera.capture_file(file_path) # capture_file, a picamera2 function
+	return file_path
  
-def on_button_pressed(win):
+def on_button_pressed(win, student_info):
     # Print the countdown in the window
-    
+    choice = student_info[4]
     for i in range(3, 0, -1):
         win.clear()  
         win.attron(curses.color_pair(4))
         ## hand-keyed centering, as win_height,win_width not returned from main
-        win.addstr(6, 28, f"{i}",curses.color_pair(1))  # Print the countdown number at the center of the window
+        win.addstr(6, 28, f"{i}",curses.color_pair(1))  # Print the countdown number at the center of the window        
         win.border()
         win.refresh()  # Refresh to show the update
         time.sleep(1)
         
-    file_path = capture()
-    processed_img_path = process_image(file_path)
+    file_path = capture(student_info)
+    processed_img_path = process_image(file_path, choice)
     show_image(processed_img_path)
 
 def spool_text(win, text, colr_pr, disp_row, delay=0.1):
@@ -191,9 +201,43 @@ def handle_yes_no_response(win):
 			return choices[current_choice_idx]
 			  
 		draw_yes_no_menu(win, current_choice_idx, choices) 
-			
-def main(stdscr):
+		
+def start_screen(stdscr):
+	curses.curs_set(0)
+	stdscr.clear()
+	time_delay = 0.01
+	# Initialize colors
+	curses.start_color()
+	curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
+	curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+	curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)  # Using for menu highlight
+	curses.init_pair(4, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
 
+
+	# Get terminal window height and width
+	height, width = stdscr.getmaxyx()
+
+	# Create dimension of new window, and find center
+	win_height, win_width = 14, 55
+	max_text_width=win_width-2
+	win = curses.newwin(win_height, win_width, height // 2 - win_height // 2, width // 2 - win_width // 2)
+	win.attron(curses.color_pair(4))
+	win.border()
+	win.attroff(curses.color_pair(4)) 
+
+   	
+	## Welcome and collect user name
+	## Prompt user for input
+	prompt1 = "Welcome the PCAS SuperHero PiBooth!!"
+	prompt2 = "Press Enter to Start"
+	spool_text(win, prompt1, 2, 3, time_delay)
+	win.addstr(8, win_width//2 - len(prompt2)//2 , prompt2, curses.A_BLINK)
+	win.refresh()
+	key = win.getch()
+	while key != curses.KEY_ENTER and key != 10:
+		key = win.getch()
+		
+def matrix(stdscr):
 	"""this is the matrix screen intro"""
 	time_delay = 0.01
 	curses.curs_set(0) # hide the cursor
@@ -234,9 +278,6 @@ def main(stdscr):
 			break # exit the loop if any key pressed
 			
 		time.sleep(0.05)
-
-if __name__ == "__main__":
-	curses.wrapper(main)
  
 def main(stdscr):
 	curses.curs_set(0)
@@ -375,6 +416,7 @@ def main(stdscr):
 		if match:
 			extracted_string = match.group(1)
 			txt1 = f"Extracted String: {extracted_string.lower()}@umich.edu"
+			uniq = extracted_string.lower()
 			win.box()
 			win.addstr(7, win_width//2 - len(txt1)//2, txt1, curses.color_pair(3))
 			txt2 = "***** MUTANT VERIFIED *****"
@@ -564,17 +606,20 @@ def main(stdscr):
 			x = win.getmaxyx()[1]//2 - len(selected_item)//2
 			win.addstr(9,x,selected_item,curses.color_pair(1) | curses.A_BLINK)
 			win.refresh()
-			time.sleep(3)
-			win.addstr(10, win_width // 2 - len(f"Alright, {name}, Press Button When Ready") // 2,
-						   f"Alright, {name}, Press Key, Button When Ready", curses.color_pair(1))			
+			time.sleep(1)
+			win.addstr(11, win_width // 2 - len(f"Alright, {name}, Press Button When Ready") // 2,
+						   f"Alright, {name}, Press Key When Ready", curses.color_pair(2))			
 			win.refresh()
+			student_info = [name, reply1, reply2, uniq, selected_item]
 			win.getch()
-			button.when_pressed = on_button_pressed(win)
+			button.when_pressed = on_button_pressed(win, student_info)
 			break
 
 if __name__ == "__main__":
 	try: 
 		while True:
+			curses.wrapper(start_screen)
+			curses.wrapper(matrix)
 			wrapper(main)
 	except KeyboardInterrupt:
 		print('exiting')
