@@ -103,9 +103,9 @@ def process_image(file_path, choice):
     faces = detect_face(image)
     face_image = smooth(image, faces)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
-    gray = cv2.medianBlur(gray, 5) #remove? 
+    gray = cv2.medianBlur(gray, 7) #remove for other edge detection method  
     edges = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-                                  cv2.THRESH_BINARY, 9, 9)
+                                  cv2.THRESH_BINARY, 9, 5)
    
     #edges = cv2.Canny(gray, 100, 200)
     #edges = cv2.normalize(edges, None, 0, 25, cv2.NORM_MINMAX).astype(np.uint8)
