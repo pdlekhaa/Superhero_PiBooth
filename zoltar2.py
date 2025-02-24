@@ -126,7 +126,7 @@ def process_image(file_path, choice):
     cartoon_background = cv2.bitwise_and(quantized_img, quantized_img, mask=edges)
     
     # Blend smoothly the face region with the cartoonized background
-    final_image = cv2.addWeighted(cartoon_background, 1, face_image, 0.4, 0)
+    final_image = cv2.addWeighted(cartoon_background, 1, face_image, 0.2, 0)
     
     # Enhance image contrast if needed
     final_image = cv2.convertScaleAbs(final_image, alpha=1.3, beta=30)
