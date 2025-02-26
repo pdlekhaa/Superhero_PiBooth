@@ -49,11 +49,11 @@ def add_frame(background, choice): #takes in openCV image (of picture taken)
 	background[:, :, 3] = 255 # 255
 	#*#*# CHANGE ME *#*#*#
 	if 'Expression' in choice:
-		foreground = cv2.imread("/home/pi1/Pink_NewFrame.png", cv2.IMREAD_UNCHANGED) 
+		foreground = cv2.imread("/home/pi1/Pink_Comic_CFE_Final.png", cv2.IMREAD_UNCHANGED) 
 	elif 'Scientific' in choice:
-		foreground = cv2.imread("/home/pi1/Green_NewFrame.png", cv2.IMREAD_UNCHANGED)
+		foreground = cv2.imread("/home/pi1/Blue_Comic_CSD_Final.png", cv2.IMREAD_UNCHANGED)
 	elif 'Justic' in choice:
-		foreground = cv2.imread("/home/pi1/Blue_NewFrame.png", cv2.IMREAD_UNCHANGED) 
+		foreground = cv2.imread("/home/pi1/Green_Comic_CSJ_Final.png", cv2.IMREAD_UNCHANGED) 
 	
 	# normalize alpha channels from 0-255 to 0-1
 	alpha_background = background[:,:,3] / 255.0
